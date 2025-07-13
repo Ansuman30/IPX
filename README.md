@@ -29,62 +29,64 @@ IPX Protocol is a decentralized platform built on the Internet Computer (ICP) th
 The IPX Protocol implements a sophisticated modular architecture with multiple specialized canisters that work in concert to provide a complete decentralized intellectual property tokenization solution:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         IPX Protocol Architecture                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────┐    ┌─────────────────┐                                │
-│  │ User Wallet     │────│ Frontend dApp   │                                │
-│  │ (II/Plug)       │    │ (IPX UI)        │                                │
-│  └─────────────────┘    └─────────────────┘                                │
-│           │                       │                                        │
-│           └───────────────────────┼────────────────────────────────────────│
-│                                   ↓                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                    IPX Core Canisters                              │   │
-│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐    │   │
-│  │  │ IPX UI Canister │  │ IPBond Factory  │  │ IP Metadata     │    │   │
-│  │  │ • Frontend      │──│ • Bond NFT      │──│ Registry        │    │   │
-│  │  │   Interface     │  │   Creation      │  │ • Asset Data    │    │   │
-│  │  │ • User Auth     │  │ • Campaign Mgmt │  │ • Performance   │    │   │
-│  │  └─────────────────┘  └─────────────────┘  │   Metrics       │    │   │
-│  │           │                     │          └─────────────────┘    │   │
-│  │           │      ┌─────────────────┐               │               │   │
-│  │           │      │ Revenue         │───────────────┘               │   │
-│  │           │      │ Distribution    │                               │   │
-│  │           │      │ Engine          │                               │   │
-│  │           │      └─────────────────┘                               │   │
-│  │           │              │                                         │   │
-│  │  ┌─────────────────┐     │      ┌─────────────────┐                │   │
-│  │  │ HTTPS Oracle    │─────┘      │ SNS DAO         │                │   │
-│  │  │ • YouTube API   │            │ Governance      │                │   │
-│  │  │ • Spotify API   │            │ • Proposals     │                │   │
-│  │  │ • GitHub API    │            │ • Voting        │                │   │
-│  │  │ • Substack API  │            │ • Execution     │                │   │
-│  │  │ • Amazon KDP    │            └─────────────────┘                │   │
-│  │  └─────────────────┘                                               │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                   │                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │              Treasury & Payment Systems                             │   │
-│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐    │   │
-│  │  │ BeamFi Streaming│  │ Stripe Webhook  │  │ Manual Revenue  │    │   │
-│  │  │ • Time-locked   │  │ Receiver        │  │ Ingestion       │    │   │
-│  │  │   payments      │  │ • Web2 Revenue  │  │ Interface       │    │   │
-│  │  │ • Vesting       │  │   Integration   │  │ • Creator Input │    │   │
-│  │  │ • Claims        │  │ • Real-time     │  │ • Data          │    │   │
-│  │  └─────────────────┘  │   Webhooks      │  │   Validation    │    │   │
-│  │                       └─────────────────┘  └─────────────────┘    │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                     External Revenue APIs                           │   │
-│  │  YouTube API • Spotify API • GitHub API • Substack API • Amazon KDP │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
+graph TD
+  subgraph User Interaction
+    A1[User Wallet ]
+    A2[Frontend dApp ]
+    A1 --> A2
+  end
+
+  subgraph IPX Core Canisters
+    B1[IPX UI Canister]
+    B2[IPBond Factory Canister]
+    B3[IP Metadata Registry]
+    B4[Revenue Distribution Engine]
+    B5[HTTPS Oracle Canister]
+    B6[SNS DAO Canister]
+  end
+
+  subgraph External APIs
+    C1[YouTube API]
+    C2[Spotify API]
+    C3[GitHub API]
+    C4[Substack API]
+    C5[Amazon KDP API]
+  end
+
+  subgraph Treasury & Payments
+    D1[BeamFi Streaming Canister]
+    D2[Stripe Webhook Receiver]
+    D3[Manual Revenue Ingestion Interface]
+  end
+
+  A2 --> B1
+  B1 --> B2
+  B1 --> B3
+  B1 --> B4
+  B1 --> B5
+  B1 --> B6
+
+  B2 --> B3
+  B2 --> B4
+
+  B5 --> C1
+  B5 --> C2
+  B5 --> C3
+  B5 --> C4
+  B5 --> C5
+
+  B4 --> D1
+  D2 --> B4
+  D3 --> B4
+
+  B6 --> B2
+  B6 --> B3
+  B6 --> B5
+
+  B4 --> A1
 ```
 
-### Enhanced Protocol Flow
+# Enhanced Protocol Flow
 
 The IPX Protocol enables creators to tokenize their intellectual property through a comprehensive multi-step process:
 
@@ -128,7 +130,7 @@ sequenceDiagram
     BeamFiStream->>NFTHolders: Stream payments to token holders
 ```
 
-## Protocol Mechanics
+# Protocol Mechanics
 
 ### 1. IP Asset Registration & Tokenization
 
@@ -201,7 +203,7 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 5. **Treasury Management**: 
    - Multiple revenue sources → Treasury system → Automated token conversions → Investor payouts
 
-### Complete Protocol Workflow
+# Complete Protocol Workflow
 
 #### Phase 1: IP Asset Onboarding
 1. **Identity Verification**: Creator signs in via Internet Identity
@@ -246,9 +248,9 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 3. **Automatic Execution**: Approved proposals modify canister behavior via SNS integration
 4. **Dispute Resolution**: Community-driven resolution of performance or payout disputes
 
-## Canister Documentation
+# Canister Documentation
 
-### Detailed Canister Responsibilities
+## Detailed Canister Responsibilities
 
 #### **IPX UI Canister**
 - **Frontend Interface**: Serves the main user interface for creators and investors
@@ -310,7 +312,7 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 - Handles transfers, approvals, and ownership queries
 - Maintains collection-level statistics and metadata
 
-#### **Treasury & Payment Integration**
+## Treasury & Payment Integration
 
 ##### **Stripe Webhook Receiver Canister**
 - **Web2 Revenue Integration**: Seamlessly captures revenue from traditional payment processors

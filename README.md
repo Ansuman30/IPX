@@ -5,10 +5,8 @@
 2. [Enhanced Architecture](#enhanced-architecture)
 3. [Protocol Mechanics](#protocol-mechanics)
 4. [Canister Documentation](#canister-documentation)
-5. [API Reference](#api-reference)
-6. [Complete Usage Examples](#complete-usage-examples)
-7. [Deployment Guide](#deployment-guide)
-8. [Integration Guide](#integration-guide)
+5. [Deployment Guide](#deployment-guide)
+6. [Integration Guide](#integration-guide)
 
 ## Overview
 
@@ -336,357 +334,617 @@ The governance system now supports expanded decision-making capabilities:
 - **Protocol Fee Management**: Setting and adjusting fees for different IP asset types
 - **Emergency Controls**: Rapid response mechanisms for critical protocol issues
 
-## API Reference
+## Deployment Guide
 
-### IPX UI Canister API
+### Prerequisites
 
-#### `register_ip_asset`
-Registers a new intellectual property asset with comprehensive platform connections.
+1. **DFX SDK**: Install the latest version
+```bash
+sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+```
 
-**Parameters**:
-```rust
-register_ip_asset(request: RegisterIPRequest) -> Result<IPAssetRegistration, String>
+2. **Rust**: Install with wasm32 target
+```bash
+rustup target add wasm32-unknown-unknown
+```
 
-struct RegisterIPRequest {
-    creator_identity: Principal,
-    asset_type: IPAssetType,
-    platforms: Vec<PlatformConnection>,
-    tokenization_config: TokenizationConfig,
+3. **Vessel**: For dependency management (if using Motoko)
+```bash
+cargo install vessel
+```
+
+### Setup Project
+
+1. **Clone and setup directory structure**:
+```bash
+mkdir ipx-protocol && cd ipx-protocol
+# Create the directory structure as shown earlier
+```
+
+2. **Configure dfx.json**:
+```json
+{
+  "version": 1,
+  "canisters": {
+    "ipx_ui": {
+      "type": "rust",
+      "package": "ipx_ui"
+    },
+    "ipbond_factory": {
+      "type": "rust",
+      "package": "ipbond_factory"
+    },
+    "ip_metadata_registry": {
+      "type": "rust",
+      "package": "ip_metadata_registry"
+    },
+    "revenue_distribution_engine": {
+      "type": "rust",
+      "package": "revenue_distribution_engine"
+    },
+    "https_oracle": {
+      "type": "rust",
+      "package": "https_oracle"
+    },
+    "beamfi_stream": {
+      "type": "rust",
+      "package": "beamfi_stream"
+    },
+    "campaign_factory": {
+      "type": "rust",
+      "package": "campaign_factory"
+    },
+    "vault": {
+      "type": "rust", 
+      "package": "vault"
+    },
+    "nft_registry": {
+      "type": "rust",
+      "package": "nft_registry"
+    },
+    "stripe_webhook_receiver": {
+      "type": "rust",
+      "package": "stripe_webhook_receiver"
+    },
+    "manual_revenue_ingestion": {
+      "type": "rust",
+      "package": "manual_revenue_ingestion"
+    },
+    "sns_dao": {
+      "type": "rust",
+      "package": "sns_dao"
+    }
+  }
 }
 ```
 
-**Example**:
-```rust
-let registration = ipx_ui::register_ip_asset(RegisterIPRequest {
-    creator_identity: creator_principal,
-    asset_type: IPAssetType::MultiPlatformCreator,
-    platforms: vec![
-        PlatformConnection {
-            platform: "youtube".to_string(),
-            channel_id: "UC123456789".to_string(),
-            api_credentials: youtube_oauth_token,
-            revenue_sharing_enabled: true,
-        }
-    ],
-    tokenization_config: TokenizationConfig {
-        revenue_percentage: 25,
-        term_months: 18,
-        vesting_schedule: VestingType::PerformanceLinked,
-    }
-}).await?;
+3. **Build and deploy**:
+```bash
+# Start local replica
+dfx start --background --clean
+
+# Build all canisters
+dfx build
+
+# Deploy all canisters
+dfx deploy
+
+# Or deploy individually
+dfx deploy ipx_ui
+dfx deploy ipbond_factory
+dfx deploy ip_metadata_registry
+# ... etc
 ```
 
-### IPBond Factory API
+### Production Deployment
 
-#### `create_ip_bond`
-Creates a specialized IP Bond NFT representing revenue sharing rights.
+1. **Configure for mainnet**:
+```bash
+dfx deploy --network ic --with-cycles 1000000000000
+```
 
-**Parameters**:
-```rust
-create_ip_bond(request: CreateIPBondRequest) -> Result<IPBondResult, String>
+2. **Set up canister controllers**:
+```bash
+dfx canister --network ic update-settings ipbond_factory --add-controller <DAO_PRINCIPAL>
+dfx canister --network ic update-settings revenue_distribution_engine --add-controller <DAO_PRINCIPAL>
+```
 
-struct CreateIPBondRequest {
-    ip_asset_id: u64,
-    bond_metadata: IPBondMetadata,
+3. **Initialize canister relationships**:
+```bash
+# Set factory canister ID in registry
+dfx canister call ip_metadata_registry set_factory_canister '("'$(dfx canister id ipbond_factory)'")'
+
+# Configure oracle endpoints
+dfx canister call https_oracle configure_endpoints '(vec {
+  record { platform = "youtube"; endpoint = "https://www.googleapis.com/youtube/v3/channels"; };
+  record { platform = "spotify"; endpoint = "https://api.spotify.com/v1/artists"; };
+  record { platform = "github"; endpoint = "https://api.github.com/users"; };
+  record { platform = "substack"; endpoint = "https://api.substack.com/user"; };
+  record { platform = "amazon_kdp"; endpoint = "https://kdp.amazon.com/api/author"; };
+})'
+```
+
+## Integration Guide
+
+### Frontend Integration
+
+1. **Install dependencies**:
+```bash
+npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-client
+```
+
+2. **Create agent and actors**:
+```javascript
+import { Actor, HttpAgent } from '@dfinity/agent';
+import { AuthClient } from '@dfinity/auth-client';
+import { idlFactory as ipxUIIdl } from './declarations/ipx_ui';
+import { idlFactory as ipbondFactoryIdl } from './declarations/ipbond_factory';
+
+const agent = new HttpAgent({ 
+  host: process.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:8000'
+});
+
+// In development, fetch root key
+if (process.env.NODE_ENV !== 'production') {
+  agent.fetchRootKey();
 }
+
+const ipxUI = Actor.createActor(ipxUIIdl, {
+  agent,
+  canisterId: process.env.REACT_APP_IPX_UI_CANISTER_ID
+});
+
+const ipbondFactory = Actor.createActor(ipbondFactoryIdl, {
+  agent,
+  canisterId: process.env.REACT_APP_IPBOND_FACTORY_CANISTER_ID
+});
 ```
 
-#### `get_bond_performance`
-Retrieves performance metrics for an IP Bond.
-
-**Parameters**:
-```rust
-get_bond_performance(bond_id: u64) -> Option<BondPerformanceMetrics>
-```
-
-### Revenue Distribution Engine API
-
-#### `process_revenue_cycle`
-Processes a complete revenue update cycle across all platforms.
-
-**Parameters**:
-```rust
-process_revenue_cycle() -> Result<RevenueCycleResult, String>
-```
-
-#### `calculate_performance_bonuses`
-Calculates performance bonuses based on actual vs. projected metrics.
-
-**Parameters**:
-```rust
-calculate_performance_bonuses(ip_asset_id: u64) -> Result<Vec<PerformanceBonus>, String>
-```
-
-#### `distribute_with_performance_bonuses`
-Distributes revenue including performance-based bonuses.
-
-**Parameters**:
-```rust
-distribute_with_performance_bonuses(request: DistributionRequest) -> Result<DistributionResult, String>
-```
-
-### Enhanced HTTPS Oracle API
-
-#### `configure_multi_platform_monitoring`
-Sets up comprehensive monitoring across multiple revenue platforms.
-
-**Parameters**:
-```rust
-configure_multi_platform_monitoring(
-    ip_asset_id: u64,
-    config: MultiPlatformOracleConfig
-) -> Result<OracleConfigResult, String>
-```
-
-#### `get_platform_revenue_data`
-Retrieves latest revenue data for a specific platform.
-
-**Parameters**:
-```rust
-get_platform_revenue_data(
-    ip_asset_id: u64,
-    platform: String,
-    date_range: DateRange
-) -> Option<PlatformRevenueData>
-```
-
-### BeamFi Stream API (Enhanced)
-
-#### `create_performance_linked_stream`
-Creates streaming contracts with performance-based adjustments.
-
-**Parameters**:
-```rust
-create_performance_linked_stream(request: PerformanceStreamRequest) -> Result<StreamResult, String>
-```
-
-#### `update_stream_for_performance`
-Updates existing streams based on new performance data.
-
-**Parameters**:
-```rust
-update_stream_for_performance(
-    stream_id: u64,
-    performance_data: PerformanceMetrics
-) -> Result<StreamUpdateResult, String>
-```
-
-#### `claim_with_bonus`
-Allows claiming with performance bonus calculations.
-
-**Parameters**:
-```rust
-claim_with_bonus(
-    stream_id: u64,
-    include_performance_bonus: bool
-) -> Result<ClaimResult, String>
-```
-
-## Complete Usage Examples
-
-### Creating an IP Asset Campaign with Multi-Platform Integration
-
-```rust
-// 1. Register comprehensive IP asset via IPX UI Canister
-let ip_asset_registration = ipx_ui::register_ip_asset(RegisterIPRequest {
-    creator_identity: creator_principal,
-    asset_type: IPAssetType::MultiPlatformCreator,
-    platforms: vec![
-        PlatformConnection {
-            platform: "youtube".to_string(),
-            channel_id: "UC123456789".to_string(),
-            api_credentials: youtube_oauth_token,
-            revenue_sharing_enabled: true,
+3. **Register IP Asset**:
+```javascript
+// Register multi-platform IP asset
+const registerIPAsset = async (creatorData) => {
+  try {
+    const registration = await ipxUI.register_ip_asset({
+      creator_identity: creatorData.principal,
+      asset_type: { MultiPlatformCreator: null },
+      platforms: [
+        {
+          platform: "youtube",
+          channel_id: creatorData.youtubeChannelId,
+          api_credentials: creatorData.youtubeToken,
+          revenue_sharing_enabled: true
         },
-        PlatformConnection {
-            platform: "spotify".to_string(),
-            artist_id: "spotify_artist_123".to_string(),
-            api_credentials: spotify_client_credentials,
-            revenue_sharing_enabled: true,
+        {
+          platform: "spotify",
+          artist_id: creatorData.spotifyArtistId,
+          api_credentials: creatorData.spotifyToken,
+          revenue_sharing_enabled: true
         },
-        PlatformConnection {
-            platform: "github".to_string(),
-            username: "creator_dev".to_string(),
-            repositories: vec!["awesome-project", "another-repo"],
-            sponsors_enabled: true,
-        },
-        PlatformConnection {
-            platform: "substack".to_string(),
-            publication_url: "https://creator.substack.com".to_string(),
-            api_key: substack_api_key,
-            revenue_sharing_enabled: true,
-        },
-        PlatformConnection {
-            platform: "amazon_kdp".to_string(),
-            author_id: "amazon_author_123".to_string(),
-            books: vec!["ASIN1234567890", "ASIN0987654321"],
-            revenue_sharing_enabled: true,
+        {
+          platform: "github",
+          username: creatorData.githubUsername,
+          repositories: creatorData.repositories,
+          sponsors_enabled: true
         }
-    ],
-    tokenization_config: TokenizationConfig {
-        revenue_percentage: 25, // 25% of revenue to investors
-        term_months: 18,        // 18-month term
-        vesting_schedule: VestingType::PerformanceLinked,
-        minimum_performance_threshold: Some(1000), // Minimum monthly revenue
-    }
-}).await?;
+      ],
+      tokenization_config: {
+        revenue_percentage: creatorData.revenuePercentage,
+        term_months: creatorData.termMonths,
+        vesting_schedule: { PerformanceLinked: null }
+      }
+    });
+    
+    console.log('IP Asset registered:', registration);
+    return registration;
+  } catch (error) {
+    console.error('Registration failed:', error);
+    throw error;
+  }
+};
+```
 
-// 2. Create IP Bond NFT via IPBond Factory
-let ip_bond_result = ipbond_factory::create_ip_bond(CreateIPBondRequest {
-    ip_asset_id: ip_asset_registration.asset_id,
-    bond_metadata: IPBondMetadata {
-        title: "Multi-Platform Creator Revenue Bond".to_string(),
-        description: "25% revenue share from YouTube, Spotify, GitHub, Substack, and Amazon KDP".to_string(),
-        term_months: 18,
-        expected_monthly_revenue: 5000, // $5k expected monthly
-        performance_bonus_tiers: vec![
-            BonusTier { threshold: 7500, bonus_percentage: 5 },   // 5% bonus if >$7.5k/month
-            BonusTier { threshold: 10000, bonus_percentage: 10 }, // 10% bonus if >$10k/month
+### Wallet Integration
+
+1. **Internet Identity Authentication**:
+```javascript
+import { AuthClient } from '@dfinity/auth-client';
+
+class AuthService {
+  constructor() {
+    this.authClient = null;
+    this.identity = null;
+  }
+
+  async init() {
+    this.authClient = await AuthClient.create();
+    this.identity = this.authClient.getIdentity();
+  }
+
+  async login() {
+    return new Promise((resolve, reject) => {
+      this.authClient.login({
+        identityProvider: process.env.NODE_ENV === 'production' 
+          ? 'https://identity.ic0.app'
+          : `http://localhost:4943?canisterId=${process.env.INTERNET_IDENTITY_CANISTER_ID}`,
+        onSuccess: () => {
+          this.identity = this.authClient.getIdentity();
+          resolve(this.identity);
+        },
+        onError: reject
+      });
+    });
+  }
+
+  async logout() {
+    await this.authClient.logout();
+    this.identity = null;
+  }
+
+  isAuthenticated() {
+    return this.authClient?.isAuthenticated() || false;
+  }
+
+  getIdentity() {
+    return this.identity;
+  }
+
+  getPrincipal() {
+    return this.identity?.getPrincipal();
+  }
+}
+
+export const authService = new AuthService();
+```
+
+2. **Plug Wallet Integration**:
+```javascript
+class PlugWalletService {
+  async connect() {
+    try {
+      const plugConnected = await window.ic.plug.requestConnect({
+        whitelist: [
+          process.env.REACT_APP_IPX_UI_CANISTER_ID,
+          process.env.REACT_APP_IPBOND_FACTORY_CANISTER_ID,
+          process.env.REACT_APP_NFT_REGISTRY_CANISTER_ID
         ],
-        risk_factors: vec![
-            "Platform algorithm changes".to_string(),
-            "Market competition".to_string(),
-            "Content performance variability".to_string()
-        ]
-    }
-}).await?;
+        host: process.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:8000'
+      });
 
-// 3. Configure comprehensive oracle monitoring
-let oracle_config = https_oracle::configure_multi_platform_monitoring(
-    ip_asset_registration.asset_id,
-    MultiPlatformOracleConfig {
-        youtube: YouTubeOracleConfig {
-            channel_id: "UC123456789".to_string(),
-            metrics: vec!["revenue", "views", "subscribers", "watch_time"],
-            update_frequency: Duration::from_hours(6),
-            adsense_integration: true,
+      if (plugConnected) {
+        this.principal = await window.ic.plug.getPrincipal();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Plug wallet connection failed:', error);
+      return false;
+    }
+  }
+
+  async createActor(canisterId, idlFactory) {
+    return await window.ic.plug.createActor({
+      canisterId,
+      interfaceFactory: idlFactory
+    });
+  }
+
+  isConnected() {
+    return window.ic?.plug?.isConnected() || false;
+  }
+
+  getPrincipal() {
+    return this.principal;
+  }
+}
+
+export const plugWalletService = new PlugWalletService();
+```
+
+### Oracle Integration & Revenue Tracking
+
+1. **Configure Multi-Platform Monitoring**:
+```javascript
+const setupRevenueTracking = async (ipAssetId, platformConfigs) => {
+  try {
+    const httpsOracle = Actor.createActor(httpsOracleIdl, {
+      agent,
+      canisterId: process.env.REACT_APP_HTTPS_ORACLE_CANISTER_ID
+    });
+
+    const config = await httpsOracle.configure_multi_platform_monitoring(
+      ipAssetId,
+      {
+        youtube: {
+          channel_id: platformConfigs.youtube.channelId,
+          metrics: ["revenue", "views", "subscribers", "watch_time"],
+          update_frequency: { hours: 6 },
+          adsense_integration: true
         },
-        spotify: SpotifyOracleConfig {
-            artist_id: "spotify_artist_123".to_string(),
-            metrics: vec!["monthly_listeners", "streams", "revenue"],
-            update_frequency: Duration::from_hours(12),
-            for_artists_api: true,
+        spotify: {
+          artist_id: platformConfigs.spotify.artistId,
+          metrics: ["monthly_listeners", "streams", "revenue"],
+          update_frequency: { hours: 12 },
+          for_artists_api: true
         },
-        github: GitHubOracleConfig {
-            username: "creator_dev".to_string(),
-            repositories: vec!["awesome-project", "another-repo"],
-            metrics: vec!["sponsors_revenue", "stars", "forks", "commits"],
-            update_frequency: Duration::from_hours(24),
+        github: {
+          username: platformConfigs.github.username,
+          repositories: platformConfigs.github.repositories,
+          metrics: ["sponsors_revenue", "stars", "forks", "commits"],
+          update_frequency: { hours: 24 }
         },
-        substack: SubstackOracleConfig {
-            publication_url: "https://creator.substack.com".to_string(),
-            metrics: vec!["subscriber_count", "paid_subscribers", "post_views", "revenue"],
-            update_frequency: Duration::from_hours(8),
+        substack: {
+          publication_url: platformConfigs.substack.publicationUrl,
+          metrics: ["subscriber_count", "paid_subscribers", "post_views", "revenue"],
+          update_frequency: { hours: 8 }
         },
-        amazon_kdp: AmazonKDPOracleConfig {
-            author_id: "amazon_author_123".to_string(),
-            books: vec!["ASIN1234567890", "ASIN0987654321"],
-            metrics: vec!["units_sold", "royalties", "page_reads"],
-            update_frequency: Duration::from_hours(24),
+        amazon_kdp: {
+          author_id: platformConfigs.amazonKDP.authorId,
+          books: platformConfigs.amazonKDP.books,
+          metrics: ["units_sold", "royalties", "page_reads"],
+          update_frequency: { hours: 24 }
         }
-    }
-).await?;
+      }
+    );
 
-println!("Multi-platform IP asset created with Bond ID: {}", ip_bond_result.bond_id);
+    console.log('Multi-platform monitoring configured:', config);
+    return config;
+  } catch (error) {
+    console.error('Oracle configuration failed:', error);
+    throw error;
+  }
+};
 ```
 
-### Enhanced Investment Flow with Performance Analysis
+2. **Real-time Revenue Updates**:
+```javascript
+const subscribeToRevenueUpdates = (ipAssetId, callback) => {
+  const pollInterval = setInterval(async () => {
+    try {
+      const revenueEngine = Actor.createActor(revenueEngineIdl, {
+        agent,
+        canisterId: process.env.REACT_APP_REVENUE_ENGINE_CANISTER_ID
+      });
 
-```rust
-// 1. Analyze IP asset performance before investing
-let performance_analysis = ip_metadata_registry::get_performance_analysis(
-    ip_asset_registration.asset_id
-)?;
+      const revenueData = await revenueEngine.get_latest_revenue_data(ipAssetId);
+      
+      if (revenueData) {
+        callback({
+          totalRevenue: revenueData.total_revenue,
+          platformBreakdown: revenueData.platform_breakdown,
+          performanceMetrics: revenueData.performance_metrics,
+          lastUpdated: revenueData.last_updated
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch revenue updates:', error);
+    }
+  }, 30000); // Poll every 30 seconds
 
-println!("Performance Analysis:");
-println!("  YouTube: {} monthly views, ${} estimated monthly revenue", 
-         performance_analysis.youtube.monthly_views,
-         performance_analysis.youtube.estimated_monthly_revenue);
-println!("  Spotify: {} monthly listeners, ${} estimated monthly revenue",
-         performance_analysis.spotify.monthly_listeners,
-         performance_analysis.spotify.estimated_monthly_revenue);
-println!("  GitHub: {} active sponsors, ${} monthly sponsor revenue",
-         performance_analysis.github.active_sponsors,
-         performance_analysis.github.monthly_sponsor_revenue);
-
-// 2. Calculate expected returns based on historical data
-let roi_projection = calculate_roi_projection(
-    investment_amount: 2500, // $2,500 investment
-    performance_analysis.clone(),
-    ip_bond_result.bond_metadata.term_months
-)?;
-
-println!("Expected ROI over {} months: {:.2}%", 
-         ip_bond_result.bond_metadata.term_months,
-         roi_projection.annualized_return);
-
-// 3. Make investment through Sonic LBP integration
-let investment_result = sonic_lbp::invest_in_ip_bond(InvestmentRequest {
-    bond_id: ip_bond_result.bond_id,
-    investment_amount: 2500,
-    investor_principal: investor_principal,
-    slippage_tolerance: 2.0, // 2% slippage tolerance
-}).await?;
-
-// 4. Verify comprehensive NFT metadata
-let nft_metadata = nft_registry::icrc7_token_metadata(investment_result.nft_token_id)?;
-println!("Investment NFT Created:");
-println!("  Token ID: {}", investment_result.nft_token_id);
-println!("  Revenue Share: {:.3}%", nft_metadata.revenue_share_percentage);
-println!("  Expected Monthly Payout: ${:.2}", nft_metadata.expected_monthly_payout);
-println!("  Performance Bonus Eligible: {}", nft_metadata.performance_bonus_eligible);
+  return () => clearInterval(pollInterval);
+};
 ```
 
-### Multi-Source Revenue Distribution with Performance Bonuses
+### Investment Flow Integration
 
+1. **Investment Interface**:
+```javascript
+const investInIPBond = async (bondId, investmentAmount, slippageTolerance = 2.0) => {
+  try {
+    // First, get bond details for analysis
+    const ipbondFactory = Actor.createActor(ipbondFactoryIdl, {
+      agent,
+      canisterId: process.env.REACT_APP_IPBOND_FACTORY_CANISTER_ID
+    });
+
+    const bondDetails = await ipbondFactory.get_bond_details(bondId);
+    
+    // Calculate expected returns
+    const roiProjection = await calculateROIProjection(
+      investmentAmount,
+      bondDetails.performance_analysis,
+      bondDetails.term_months
+    );
+
+    console.log(`Expected ROI over ${bondDetails.term_months} months: ${roiProjection.annualized_return}%`);
+
+    // Make investment through Sonic LBP
+    const sonicLBP = Actor.createActor(sonicLBPIdl, {
+      agent,
+      canisterId: process.env.REACT_APP_SONIC_LBP_CANISTER_ID
+    });
+
+    const investmentResult = await sonicLBP.invest_in_ip_bond({
+      bond_id: bondId,
+      investment_amount: investmentAmount,
+      investor_principal: authService.getPrincipal(),
+      slippage_tolerance: slippageTolerance
+    });
+
+    console.log('Investment successful:', investmentResult);
+    return investmentResult;
+  } catch (error) {
+    console.error('Investment failed:', error);
+    throw error;
+  }
+};
+```
+
+2. **Stream Management**:
+```javascript
+const manageInvestmentStreams = async (investorPrincipal) => {
+  try {
+    const beamfiStream = Actor.createActor(beamfiStreamIdl, {
+      agent,
+      canisterId: process.env.REACT_APP_BEAMFI_STREAM_CANISTER_ID
+    });
+
+    // Get all streams for investor
+    const streams = await beamfiStream.get_investor_streams(investorPrincipal);
+    
+    const streamData = await Promise.all(
+      streams.map(async (streamId) => {
+        const details = await beamfiStream.get_stream_details(streamId);
+        const claimableAmount = await beamfiStream.get_claimable_amount(streamId);
+        
+        return {
+          streamId,
+          details,
+          claimableAmount,
+          canClaim: claimableAmount > 0
+        };
+      })
+    );
+
+    return streamData;
+  } catch (error) {
+    console.error('Failed to fetch stream data:', error);
+    throw error;
+  }
+};
+
+const claimStreamPayments = async (streamId, includePerformanceBonus = true) => {
+  try {
+    const beamfiStream = Actor.createActor(beamfiStreamIdl, {
+      agent,
+      canisterId: process.env.REACT_APP_BEAMFI_STREAM_CANISTER_ID
+    });
+
+    const claimResult = await beamfiStream.claim_with_bonus(
+      streamId,
+      includePerformanceBonus
+    );
+
+    console.log('Claim successful:', claimResult);
+    return claimResult;
+  } catch (error) {
+    console.error('Claim failed:', error);
+    throw error;
+  }
+};
+```
+
+## Security Considerations
+
+### Access Control
+- Only authorized vault canisters can mint IP Bond NFTs
+- Only verified oracle canisters can update revenue data
+- Only campaign creators can modify specific campaign settings
+- DAO governance required for critical protocol changes
+- Multi-signature requirements for high-value operations
+
+### Input Validation
+- All user inputs are validated and sanitized at canister level
+- Revenue share percentages are capped at 100%
+- Investment amounts are checked against funding goals and limits
+- Oracle data undergoes verification before processing
+- API credentials are encrypted and stored securely
+
+### Upgradability
+- All canisters support stable storage for seamless upgrades
+- Critical state is preserved across upgrades using pre/post upgrade hooks
+- Upgrade proposals go through DAO governance process
+- Backward compatibility maintained for existing investments
+
+### Economic Security
+- Revenue distributions are calculated deterministically
+- All transactions are recorded immutably on-chain
+- NFT ownership provides cryptographic proof of investment rights
+- Streaming prevents manipulation of payout timing
+- Performance bonuses are calculated transparently
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Canister out of cycles**:
+```bash
+dfx canister status ipbond_factory
+dfx ledger top-up ipbond_factory --amount 1.0
+```
+
+2. **Wasm module too large**:
+```bash
+# Optimize build
+cargo build --target wasm32-unknown-unknown --release --profile release
+ic-wasm target/wasm32-unknown-unknown/release/vault.wasm -o vault_optimized.wasm shrink
+```
+
+3. **Inter-canister call failures**:
+- Check canister IDs are correct in environment variables
+- Verify network connectivity and replica status
+- Ensure sufficient cycles for cross-canister calls
+- Validate canister permissions and access controls
+
+4. **Oracle API failures**:
+- Verify API credentials are valid and not expired
+- Check rate limits haven't been exceeded
+- Ensure external APIs are accessible from IC
+- Validate response parsing logic
+
+### Monitoring and Logging
+
+1. **View canister logs**:
+```bash
+dfx canister logs ipbond_factory
+dfx canister logs revenue_distribution_engine
+```
+
+2. **Monitor metrics with custom logging**:
 ```rust
-// 1. Revenue Distribution Engine processes multiple data sources
-let revenue_update_cycle = revenue_distribution_engine::process_revenue_cycle().await?;
+ic_cdk::println!("IP Bond {} created for asset {} with vault {}", 
+                bond_id, asset_id, vault_id);
+ic_cdk::println!("Revenue update: ${} from {} platform", 
+                revenue_amount, platform_name);
+```
 
-println!("Revenue Update Cycle Results:");
-for platform_update in revenue_update_cycle.platform_updates {
-    println!("  {}: ${} ({}% vs. projected)", 
-             platform_update.platform,
-             platform_update.actual_revenue,
-             platform_update.performance_vs_projection);
-}
+3. **Performance monitoring**:
+```javascript
+// Frontend performance tracking
+const trackIPAssetPerformance = async (assetId) => {
+  const startTime = performance.now();
+  
+  try {
+    const performanceData = await ipMetadataRegistry.get_performance_analysis(assetId);
+    const endTime = performance.now();
+    
+    console.log(`Performance data fetched in ${endTime - startTime}ms`);
+    return performanceData;
+  } catch (error) {
+    console.error('Performance tracking failed:', error);
+  }
+};
+```
 
-// 2. Performance bonus calculation
-let bonus_calculations = revenue_distribution_engine::calculate_performance_bonuses(
-    ip_asset_registration.asset_id
-)?;
+## Contributing
 
-println!("Performance Bonus Analysis:");
-for bonus in bonus_calculations {
-    if bonus.bonus_earned > 0.0 {
-        println!("  Tier {} bonus: {:.1}% ({} investors eligible)",
-                 bonus.tier_level,
-                 bonus.bonus_percentage,
-                 bonus.eligible_investors.len());
-    }
-}
+### Development Setup
+1. Fork the repository from GitHub
+2. Create feature branch: `git checkout -b feature/new-platform-integration`
+3. Add comprehensive tests for new functionality
+4. Submit pull request with detailed description and testing results
 
-// 3. Enhanced BeamFi stream distribution with bonuses
-let enhanced_distribution = beamfi_stream::distribute_with_performance_bonuses(
-    DistributionRequest {
-        ip_asset_id: ip_asset_registration.asset_id,
-        base_revenue: revenue_update_cycle.total_revenue,
-        performance_bonuses: bonus_calculations,
-        distribution_date: current_timestamp(),
-    }
-).await?;
+### Testing Strategy
+```bash
+# Run unit tests
+cargo test --all
 
-println!("Distribution Summary:");
-println!("  Base revenue distributed: ${}", enhanced_distribution.base_amount);
-println!("  Performance bonuses: ${}", enhanced_distribution.bonus_amount);
-println!("  Total payout: ${}", enhanced_distribution.total_distributed);
+# Run integration tests
+dfx test --all
 
-// 4. Individual investor stream updates
-for investor_update in enhanced_distribution.investor_updates {
-    println!("Investor {}: ${:.2} claimable now (${:.2} total owed)",
-             investor_update.investor_principal.to_text(),
-             investor_update.claimable_now,
-             investor_update.total_owed);
-             
-    // Automatic claim processing for amounts above threshold
-    if investor_update
+# Run specific canister tests
+cargo test --package ipbond_factory
+dfx test ipbond_factory
+```
+
+### Code Standards
+- Follow Rust naming conventions and best practices
+- Add comprehensive documentation for public APIs
+- Include proper error handling for all operations
+- Use stable storage patterns for persistent data
+- Implement proper access control and validation
+- Add performance considerations for large-scale operations
+
+---
+
+This comprehensive documentation provides everything needed to understand, deploy, and integrate with the IPX Protocol. For additional support, please refer to the Internet Computer documentation or open an issue in the project repository.

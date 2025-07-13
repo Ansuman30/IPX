@@ -1,0 +1,23 @@
+{
+  "beamfi_stream": {
+    "local": "br5f7-7uaaa-aaaaa-qaaca-cai"
+  },
+  "campaign-factory": {
+    "local": "bd3sg-teaaa-aaaaa-qaaba-cai"
+  },
+  "campaign_factory": {
+    "local": "bkyz2-fmaaa-aaaaa-qaaaq-cai"
+  },
+  "nft_registry": {
+    "local": "bw4dl-smaaa-aaaaa-qaacq-cai"
+  },
+  "oracle_aggregator": {
+    "local": "be2us-64aaa-aaaaa-qaabq-cai"
+  },
+  "sns_dao": {
+    "local": "b77ix-eeaaa-aaaaa-qaada-cai"
+  },
+  "vault": {
+    "local": "by6od-j4aaa-aaaaa-qaadq-cai"
+  }
+}

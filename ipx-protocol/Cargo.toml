@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "canisters/campaign-factory",
+    "canisters/vault",
+    "canisters/nft-registry",
+    "canisters/oracle-aggregator",
+    "canisters/beamfi-stream",
+    "canisters/sns-dao"
+]
+
+[workspace.dependencies]
+ic-cdk = "0.10"
+ic-cdk-macros = "0.10"
+candid = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

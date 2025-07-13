@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "canisters": {
+    "campaign-factory": {
+      "type": "rust",
+      "package": "campaign-factory",
+      "candid": "candid/factory.did"
+    },
+    "vault": {
+      "type": "rust", 
+      "package": "vault",
+      "candid": "candid/vault.did"
+    },
+    "nft_registry": {
+      "type": "rust",
+      "package": "nft_registry", 
+      "candid": "candid/nft-registry.did"
+    },
+    "oracle_aggregator": {
+      "type": "rust",
+      "package": "oracle_aggregator",
+      "candid": "candid/oracle-aggregator.did"
+    },
+    "beamfi_stream": {
+      "type": "rust",
+      "package": "beamfi_stream",
+      "candid": "candid/beamfi-stream.did"
+    },
+    "sns_dao": {
+      "type": "rust",
+      "package": "sns_dao",
+      "candid": "candid/sns-dao.did"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    }
+  }
+}

@@ -28,7 +28,7 @@ IPX Protocol is a decentralized platform built on the Internet Computer (ICP) th
 
 The IPX Protocol implements a sophisticated modular architecture with multiple specialized canisters that work in concert to provide a complete decentralized intellectual property tokenization solution:
 
-```
+```mermaid
 graph TD
   subgraph User Interaction
     A1[User Wallet ]

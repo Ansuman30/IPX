@@ -8,11 +8,11 @@
 5. [Deployment Guide](#deployment-guide)
 6. [Integration Guide](#integration-guide)
 
-## Overview
+# Overview
 
 IPX Protocol is a decentralized platform built on the Internet Computer (ICP) that enables creators to tokenize their intellectual property and future revenue streams through NFT-based investment campaigns. The protocol allows creators to raise funding by offering investors specialized IP Bonds (NFTs) that represent a share in their future earnings from platforms like YouTube, Spotify, GitHub, Substack, and Amazon KDP.
 
-### Key Features
+## Key Features
 
 - **Intellectual Property Tokenization**: Creators tokenize future revenue streams from multiple platforms through dedicated IP Bond NFTs
 - **Multi-Platform Revenue Tracking**: HTTPS outcalls to YouTube, Spotify, GitHub, Substack, Amazon KDP, and traditional payment processors
@@ -22,9 +22,9 @@ IPX Protocol is a decentralized platform built on the Internet Computer (ICP) th
 - **Sonic LBP Integration**: Token distribution through Sonic Liquidity Bootstrapping Pools
 - **Web2 Payment Integration**: Stripe webhook receiver for traditional revenue sources
 
-## Enhanced Architecture
+#  Architecture
 
-### Enhanced Modular Canister Architecture
+## Modular Canister Architecture
 
 The IPX Protocol implements a sophisticated modular architecture with multiple specialized canisters that work in concert to provide a complete decentralized intellectual property tokenization solution:
 
@@ -90,7 +90,7 @@ graph TD
 
 The IPX Protocol enables creators to tokenize their intellectual property through a comprehensive multi-step process:
 
-#### 1. IP Asset Registration & Bond Creation
+### 1. IP Asset Registration & Bond Creation
 ```mermaid
 sequenceDiagram
     participant Creator
@@ -110,7 +110,7 @@ sequenceDiagram
     VaultCanister->>IPMetadataRegistry: Link campaign to IP asset
 ```
 
-#### 2. Revenue Tracking & Distribution Lifecycle
+### 2. Revenue Tracking & Distribution Lifecycle
 ```mermaid
 sequenceDiagram
     participant VaultCanister
@@ -205,7 +205,7 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 
 # Complete Protocol Workflow
 
-#### Phase 1: IP Asset Onboarding
+### Phase 1: IP Asset Onboarding
 1. **Identity Verification**: Creator signs in via Internet Identity
 2. **Asset Registration**: Creator adds comprehensive metadata:
    - YouTube Channel ID and AdSense connection
@@ -219,13 +219,13 @@ The protocol implements sophisticated data flow patterns across multiple caniste
    - Performance milestones and bonus distributions
 4. **IP Bond Creation**: IPBond Factory mints specialized ICRC-7 NFT representing future revenue rights
 
-#### Phase 2: Token Distribution via Sonic LBP
+### Phase 2: Token Distribution via Sonic LBP
 1. **Liquidity Pool Setup**: IP Bond NFT (or fungible derivatives) listed in Sonic LBP pool
 2. **Price Discovery**: Market determines fair value based on historical performance and projections
 3. **Investor Participation**: Community purchases IP tokens representing revenue share rights
 4. **Ownership Recording**: NFT Registry maintains comprehensive ownership records
 
-#### Phase 3: Multi-Source Revenue Tracking
+### Phase 3: Multi-Source Revenue Tracking
 1. **Automated Data Collection**:
    - YouTube API: AdSense revenue, view metrics, subscriber growth
    - Spotify API: Streaming revenue, monthly listeners, playlist performance
@@ -236,13 +236,13 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 3. **Manual Supplementation**: Creators can input additional revenue sources via validation interface
 4. **Performance Correlation**: Revenue Distribution Engine correlates earnings with performance metrics
 
-#### Phase 4: Performance-Linked Distribution
+### Phase 4: Performance-Linked Distribution
 1. **Dynamic Calculation**: Revenue share adjustments based on actual vs. projected performance
 2. **BeamFi Streaming**: Real-time revenue distribution to IP Bond holders
 3. **Vesting Management**: Time-locked payments with performance-based unlock acceleration
 4. **Claim Processing**: Investors can claim vested amounts through automated interface
 
-#### Phase 5: Community Governance
+### Phase 5: Community Governance
 1. **Proposal System**: IP Bond holders can propose protocol improvements
 2. **Weighted Voting**: Voting power proportional to IP token ownership
 3. **Automatic Execution**: Approved proposals modify canister behavior via SNS integration
@@ -252,31 +252,31 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 
 ## Detailed Canister Responsibilities
 
-#### **IPX UI Canister**
+### **IPX UI Canister**
 - **Frontend Interface**: Serves the main user interface for creators and investors
 - **Authentication**: Handles Internet Identity and Plug Wallet integration
 - **User Experience**: Provides intuitive workflows for IP asset registration and investment
 - **Real-time Updates**: Displays live revenue tracking and payout information
 
-#### **IPBond Factory Canister**
+### **IPBond Factory Canister**
 - **IP Bond NFT Creation**: Mints specialized ICRC-7 NFTs representing rights to future IP revenue
 - **Campaign Management**: Coordinates with Campaign Factory for campaign instantiation
 - **Performance Verification**: Links NFTs to verified performance metrics via HTTPS outcalls
 - **Token Sale Integration**: Interfaces with Sonic LBP pools for IP token distribution
 
-#### **IP Metadata Registry Canister**
+### **IP Metadata Registry Canister**
 - **Asset Data Storage**: Centralized registry for all IP asset metadata and performance metrics
 - **Multi-Platform Integration**: Stores connections to YouTube channels, Substack publications, GitHub repositories, Amazon KDP books, etc.
 - **Performance Tracking**: Maintains historical performance data for trend analysis
 - **Verification System**: Validates ownership claims for IP assets
 
-#### **Revenue Distribution Engine Canister**
+### **Revenue Distribution Engine Canister**
 - **Multi-Source Aggregation**: Processes revenue data from HTTPS oracles, Stripe webhooks, and manual inputs
 - **Waterfall Logic**: Implements smart contract payout waterfall calculations
 - **Real-time Processing**: Instantly updates distributions when new revenue data arrives
 - **Performance-Linked Payouts**: Adjusts distributions based on actual performance metrics
 
-#### **Enhanced HTTPS Oracle Canister**
+### **Enhanced HTTPS Oracle Canister**
 - **Expanded API Coverage**: 
   - **YouTube Data API**: AdSense revenue, subscriber growth, view metrics
   - **Spotify for Artists**: Monthly listeners, streaming revenue, playlist adds
@@ -287,46 +287,46 @@ The protocol implements sophisticated data flow patterns across multiple caniste
 - **Anomaly Detection**: Identifies unusual revenue patterns for verification
 - **Multi-Platform Correlation**: Cross-references data across platforms for accuracy
 
-#### **BeamFi Stream Canister (Enhanced)**
+### **BeamFi Stream Canister (Enhanced)**
 - **Dynamic Stream Adjustment**: Real-time recalculation based on performance-linked revenue
 - **Flexible Vesting**: Supports custom vesting schedules tied to performance milestones
 - **Governance Integration**: Allows DAO-approved early unlocks and schedule modifications
 - **Multi-Token Support**: Handles various revenue currencies and automatic conversions
 
-#### **Campaign Factory Canister**
+### **Campaign Factory Canister**
 - Spawns new Vault Canisters for each IP asset campaign using `create_canister` API
 - Maintains global registry of all campaigns for discovery
 - Links campaigns to IP assets through metadata registry
 - Provides factory methods for scalable campaign creation
 
-#### **Vault Canister (Core Protocol Logic)**
+### **Vault Canister (Core Protocol Logic)**
 - **NFT Coordination**: Works with IPBond Factory for investment token creation
 - **Oracle Integration**: Receives and validates revenue updates from multiple sources
 - **Revenue Share Management**: Tracks investor allocations and calculates distributions
 - **Stream Coordination**: Instructs BeamFi Stream Canister for payout scheduling
 - **State Management**: Maintains campaign funding progress and investor information
 
-#### **NFT Registry Canister (ICRC-7 Compliance)**
+### **NFT Registry Canister (ICRC-7 Compliance)**
 - Full ICRC-7 standard implementation for interoperability
 - Stores comprehensive metadata including IP asset details and performance data
 - Handles transfers, approvals, and ownership queries
 - Maintains collection-level statistics and metadata
 
-## Treasury & Payment Integration
+# Treasury & Payment Integration
 
-##### **Stripe Webhook Receiver Canister**
+### **Stripe Webhook Receiver Canister**
 - **Web2 Revenue Integration**: Seamlessly captures revenue from traditional payment processors
 - **Real-time Webhooks**: Processes Stripe payments instantly as they occur
 - **Data Verification**: Validates webhook authenticity and prevents duplicate processing
 - **Currency Normalization**: Converts fiat payments to protocol tokens for distribution
 
-##### **Manual Revenue Ingestion Interface**
+### **Manual Revenue Ingestion Interface**
 - **Creator Input Portal**: Allows creators to manually input revenue from sources without APIs
 - **Data Validation**: Implements verification mechanisms for manually entered data
 - **Audit Trail**: Maintains complete records of all manual revenue entries
 - **Multi-Format Support**: Accepts various file formats (CSV, JSON, direct input)
 
-#### **Enhanced Governance via SNS DAO Canister**
+### **Enhanced Governance via SNS DAO Canister**
 The governance system now supports expanded decision-making capabilities:
 
 - **IP Asset Whitelisting**: Community votes on approving new types of intellectual property
@@ -336,9 +336,9 @@ The governance system now supports expanded decision-making capabilities:
 - **Protocol Fee Management**: Setting and adjusting fees for different IP asset types
 - **Emergency Controls**: Rapid response mechanisms for critical protocol issues
 
-## Deployment Guide
+# Deployment Guide
 
-### Prerequisites
+## Prerequisites
 
 1. **DFX SDK**: Install the latest version
 ```bash
@@ -355,7 +355,7 @@ rustup target add wasm32-unknown-unknown
 cargo install vessel
 ```
 
-### Setup Project
+## Setup Project
 
 1. **Clone and setup directory structure**:
 ```bash
@@ -438,7 +438,7 @@ dfx deploy ip_metadata_registry
 # ... etc
 ```
 
-### Production Deployment
+## Production Deployment
 
 1. **Configure for mainnet**:
 ```bash
@@ -466,9 +466,9 @@ dfx canister call https_oracle configure_endpoints '(vec {
 })'
 ```
 
-## Integration Guide
+# Integration Guide
 
-### Frontend Integration
+## Frontend Integration
 
 1. **Install dependencies**:
 ```bash
